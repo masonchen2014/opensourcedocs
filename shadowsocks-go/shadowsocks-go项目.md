@@ -104,5 +104,36 @@
        ```
 
 
-- ### 连接错误处理
+- ### 连接EOF处理
 
+  读出现EOF错误时，可能会读到一些数据，这些数据需要先处理
+
+  ```go
+  	for {
+  		SetReadTimeout(src)
+  		n, err := src.Read(buf)
+  		if addTraffic != nil {
+  			addTraffic(n)
+  		}
+  		// read may return EOF with n > 0
+  		// should always process n > 0 bytes before handling error
+  		if n > 0 {
+  			// Note: avoid overwrite err returned by Read.
+  			if _, err := dst.Write(buf[0:n]); err != nil {
+  				Debug.Println("write:", err)
+  				break
+  			}
+  		}
+  		if err != nil {
+  			// Always "use of closed network connection", but no easy way to
+  			// identify this specific error. So just leave the error along for now.
+  			// More info here: https://code.google.com/p/go/issues/detail?id=4373
+  			/*
+  				if bool(Debug) && err != io.EOF {
+  					Debug.Println("read:", err)
+  				}
+  			*/
+  			break
+  		}
+  	}
+  ```
