@@ -4,7 +4,96 @@
 
 ## 主流程
 
+- ### 架构图
 
+![](image/jiagou.png)
+
+- ### local-server
+
+  - 配置
+
+    ```go
+    type Config struct {
+    	Server       interface{} `json:"server"`
+    	ServerPort   int         `json:"server_port"`
+    	LocalPort    int         `json:"local_port"`
+    	LocalAddress string      `json:"local_address"`
+    	Password     string      `json:"password"`
+    	Method       string      `json:"method"` // encryption method
+    
+    	// following options are only used by server
+    	PortPassword map[string]string `json:"port_password"`
+    	Timeout      int               `json:"timeout"`
+    
+    	// following options are only used by client
+    
+    	// The order of servers in the client config is significant, so use array
+    	// instead of map to preserve the order.
+    	ServerPassword [][]string `json:"server_password"`
+    }
+    ```
+
+    - Server : 指定remote server的地址，可以指定单个server,也可以指定多个server(一般不用)，具体可以参考	func (config *Config) GetServerArray() []string  函数
+
+    - ServerPort:  remote server的默认端口，如果Server中的地址没有带端口，则使用ServerPort,否则使用Server中地址自带的端口
+
+    - LocalPort : local-server监听端口
+
+    - LocalAddress ：local-server监听地址
+
+    - Password : Server指定的remote server的访问密码
+
+    - Method : Server指定的remote server的加解密方法名
+
+    - ServerPassword: 用于指定多个remote server
+
+
+  - 主逻辑
+
+    - local-server 监听LocalAddress和LocalPort指定的地址和端口
+
+    - client发起和local-server的连接，先进行socks5协议的协商和认证，具体可参看“socks5协议交互”一节，local-server获取到client的target地址rawaddr
+
+    - local-server向remote-server发起连接,将rawaddr发送给remote-server
+
+    - 开启一个Goroutine,专门负责从client接受数据，再发送给remote-server,主Goroutine负责从remote-server接受数据，再发送给client
+
+
+  - 加密解密
+
+    - shadowsocks.Conn
+
+      ```go
+      type Conn struct {
+      	net.Conn
+      	*Cipher
+      	readBuf  []byte
+      	writeBuf []byte
+      }
+      ```
+
+    - func (c *Conn) Write(b []byte) (n int, err error) 往remote-server发数据时，先对数据进行加密
+
+    - func (c *Conn) Read(b []byte) (n int, err error)  从remote-server读数据时，将读到的数据先解密再返回
+
+
+
+- ### remote-server
+
+  - 配置
+
+    - PortPassword：remote-server要监听的端口以及对应的密码
+    - Method：remote server的加解密方法名
+
+  - 主逻辑
+
+    - TODO
+
+
+  - 远程管理managerDaemon
+    - 增删监听端口
+    - 增删报告接收对象
+    - 向报告接收对象发送统计数值
 
 ## 关键点
 
