@@ -87,7 +87,17 @@
 
   - 主逻辑
 
-    - TODO
+    - remote-server 监听PortPassword指定的端口
+    - local-server发起和remote-server的连接，并向remote-server发送rawaddr
+
+    - 获取local-server发送的rawaddr，格式如下：
+
+      ![](image/rawaddr.png)
+
+
+    - getRequest函数从rawaddr中提取出host/ip 和port
+    - remote-server发起向host的连接
+    - 开启一个Goroutine,专门负责从local-server接受数据，再发送给host,主Goroutine负责从host接受数据，再发送给local-server
 
 
   - 远程管理managerDaemon
